@@ -1,0 +1,218 @@
+// Documentation : https://pris.ly/d/prisma-schema
+// Multi-tenant : chaque entité métier porte un `organizationId` (voir infra/rls.sql)
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgcrypto, citext, pg_trgm, unaccent]
+}
+
+// ─────────────────────────────── Tenancy ───────────────────────────────
+
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String   @unique
+  logoUrl   String?
+  locale    String   @default("fr")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships Membership[]
+  courses     Course[]
+  enrollments Enrollment[]
+
+  @@map("organizations")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  INSTRUCTOR
+  LEARNER
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique @db.Citext
+  passwordHash String
+  firstName    String
+  lastName     String
+  avatarUrl    String?
+  locale       String    @default("fr")
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  memberships   Membership[]
+  enrollments   Enrollment[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model Membership {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  userId         String   @db.Uuid
+  role           Role     @default(LEARNER)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("memberships")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String    @unique
+  userAgent String?
+  ip        String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ────────────────────────────── Catalogue ──────────────────────────────
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+model Course {
+  id             String      @id @default(uuid()) @db.Uuid
+  organizationId String      @db.Uuid
+  authorId       String?     @db.Uuid
+  title          String
+  slug           String
+  summary        String?
+  description    String?
+  coverUrl       String?
+  status         CourseStatus @default(DRAFT)
+  level          CourseLevel  @default(BEGINNER)
+  language       String       @default("fr")
+  durationMin    Int          @default(0)
+  publishedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  modules      Module[]
+  enrollments  Enrollment[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, status])
+  @@map("courses")
+}
+
+model Module {
+  id        String   @id @default(uuid()) @db.Uuid
+  courseId  String   @db.Uuid
+  title     String
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@unique([courseId, position])
+  @@map("modules")
+}
+
+enum LessonType {
+  VIDEO
+  TEXT
+  QUIZ
+  FILE
+}
+
+model Lesson {
+  id         String     @id @default(uuid()) @db.Uuid
+  moduleId   String     @db.Uuid
+  title      String
+  type       LessonType @default(VIDEO)
+  content    Json?
+  videoUrl   String?
+  durationSec Int       @default(0)
+  position   Int        @default(0)
+  isPreview  Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  module   Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress LessonProgress[]
+
+  @@unique([moduleId, position])
+  @@map("lessons")
+}
+
+// ────────────────────────────── Progression ────────────────────────────
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model Enrollment {
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @db.Uuid
+  courseId       String           @db.Uuid
+  userId         String           @db.Uuid
+  status         EnrollmentStatus @default(ACTIVE)
+  progressPct    Int              @default(0)
+  enrolledAt     DateTime         @default(now())
+  lastAccessAt   DateTime?
+  completedAt    DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonProgress LessonProgress[]
+
+  @@unique([courseId, userId])
+  @@index([organizationId, userId])
+  @@map("enrollments")
+}
+
+model LessonProgress {
+  id           String    @id @default(uuid()) @db.Uuid
+  enrollmentId String    @db.Uuid
+  lessonId     String    @db.Uuid
+  completedAt  DateTime?
+  watchedSec   Int       @default(0)
+  updatedAt    DateTime  @updatedAt
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, lessonId])
+  @@index([lessonId])
+  @@map("lesson_progress")
+}

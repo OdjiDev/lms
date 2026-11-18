@@ -1,0 +1,67 @@
+{
+  "brand": {
+    "name": "Yellow LMS",
+    "tagline": "La plateforme d’apprentissage qui tient dans votre organisation"
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "courses": "Catalogue",
+    "learners": "Apprenants",
+    "settings": "Paramètres",
+    "logout": "Se déconnecter"
+  },
+  "auth": {
+    "loginTitle": "Content de vous revoir",
+    "loginSubtitle": "Connectez-vous à votre espace de formation.",
+    "registerTitle": "Créer votre académie",
+    "registerSubtitle": "Quelques secondes pour lancer votre première formation.",
+    "email": "Adresse email",
+    "password": "Mot de passe",
+    "organizationName": "Nom de l’organisation",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "login": "Se connecter",
+    "register": "Créer mon espace",
+    "noAccount": "Pas encore de compte ?",
+    "hasAccount": "Vous avez déjà un compte ?",
+    "createAccount": "Créer un espace",
+    "signIn": "Se connecter"
+  },
+  "dashboard": {
+    "hello": "Bonjour",
+    "overview": "Vue d’ensemble",
+    "courses": "Cours",
+    "published": "Publiés",
+    "learners": "Apprenants",
+    "enrollments": "Inscriptions",
+    "completion": "Taux de complétion",
+    "continue": "Reprendre l’apprentissage",
+    "noEnrollment": "Vous n’êtes inscrit à aucun cours pour le moment.",
+    "browse": "Découvrir le catalogue"
+  },
+  "courses": {
+    "title": "Catalogue",
+    "subtitle": "Tous les parcours disponibles dans votre organisation.",
+    "search": "Rechercher un cours…",
+    "new": "Nouveau cours",
+    "empty": "Aucun cours pour l’instant.",
+    "modules": "modules",
+    "lessons": "leçons",
+    "enrolled": "inscrits",
+    "enroll": "S’inscrire",
+    "continue": "Continuer",
+    "publish": "Publier",
+    "published": "Publié",
+    "draft": "Brouillon",
+    "archived": "Archivé",
+    "progress": "Progression"
+  },
+  "common": {
+    "loading": "Chargement…",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "back": "Retour",
+    "minutes": "min",
+    "required": "Champ requis"
+  }
+}

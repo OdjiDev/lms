@@ -1,0 +1,34 @@
+{
+  "name": "lms",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Learning Management System — Next.js · React Native · NestJS · FastAPI · PostgreSQL",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=@lms/web",
+    "dev:api": "turbo run dev --filter=@lms/api",
+    "dev:mobile": "turbo run dev --filter=@lms/mobile",
+    "dev:ml": "turbo run dev --filter=@lms/ml",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml,css}\"",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "infra:reset": "docker compose down -v && docker compose up -d",
+    "db:migrate": "turbo run db:migrate --filter=@lms/api",
+    "db:seed": "turbo run db:seed --filter=@lms/api",
+    "db:studio": "turbo run db:studio --filter=@lms/api",
+    "setup": "pnpm install && pnpm infra:up && pnpm db:migrate && pnpm db:seed"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  }
+}

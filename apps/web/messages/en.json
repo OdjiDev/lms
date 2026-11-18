@@ -1,0 +1,67 @@
+{
+  "brand": {
+    "name": "Yellow LMS",
+    "tagline": "The learning platform that fits your organisation"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "courses": "Catalog",
+    "learners": "Learners",
+    "settings": "Settings",
+    "logout": "Sign out"
+  },
+  "auth": {
+    "loginTitle": "Welcome back",
+    "loginSubtitle": "Sign in to your learning space.",
+    "registerTitle": "Create your academy",
+    "registerSubtitle": "A few seconds to launch your first course.",
+    "email": "Email address",
+    "password": "Password",
+    "organizationName": "Organisation name",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "login": "Sign in",
+    "register": "Create my space",
+    "noAccount": "No account yet?",
+    "hasAccount": "Already have an account?",
+    "createAccount": "Create a space",
+    "signIn": "Sign in"
+  },
+  "dashboard": {
+    "hello": "Hello",
+    "overview": "Overview",
+    "courses": "Courses",
+    "published": "Published",
+    "learners": "Learners",
+    "enrollments": "Enrollments",
+    "completion": "Completion rate",
+    "continue": "Continue learning",
+    "noEnrollment": "You are not enrolled in any course yet.",
+    "browse": "Browse the catalog"
+  },
+  "courses": {
+    "title": "Catalog",
+    "subtitle": "Every course available in your organisation.",
+    "search": "Search a course…",
+    "new": "New course",
+    "empty": "No course yet.",
+    "modules": "modules",
+    "lessons": "lessons",
+    "enrolled": "enrolled",
+    "enroll": "Enroll",
+    "continue": "Continue",
+    "publish": "Publish",
+    "published": "Published",
+    "draft": "Draft",
+    "archived": "Archived",
+    "progress": "Progress"
+  },
+  "common": {
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "minutes": "min",
+    "required": "Required field"
+  }
+}
