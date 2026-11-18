@@ -2,9 +2,10 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { apiSafe } from '@/lib/api';
 import { requireSession } from '@/lib/session';
-import type { CourseDetail, Lesson, MyProgress } from '@/lib/types';
+import type { CourseDetail, LearnerQuiz, Lesson, MyProgress } from '@/lib/types';
 import { toggleLessonAction } from '@/app/actions';
 import { ProgressBar } from '@/components/ui';
+import { QuizPlayer } from './quiz-player';
 
 interface ContentBlock {
   type: string;
@@ -41,6 +42,11 @@ export default async function LearnPage({
   const activeIndex = activeLesson ? lessons.findIndex((item) => item.id === activeLesson.id) : -1;
   const previous = activeIndex > 0 ? lessons[activeIndex - 1] : null;
   const next = activeIndex >= 0 && activeIndex < lessons.length - 1 ? lessons[activeIndex + 1] : null;
+
+  const activeQuiz =
+    activeLesson?.type === 'QUIZ'
+      ? await apiSafe<LearnerQuiz>(`/lessons/${activeLesson.id}/quiz`)
+      : null;
 
   return (
     <div className="space-y-6">
@@ -124,7 +130,7 @@ export default async function LearnPage({
                       <p className="mt-3 text-sm font-semibold">{activeLesson.title}</p>
                       <p className="mt-1 text-xs text-white/40">
                         {activeLesson.type === 'QUIZ'
-                          ? 'Quiz — bientôt disponible'
+                          ? 'Quiz interactif — répondez aux questions ci-dessous'
                           : activeLesson.type === 'FILE'
                             ? 'Ressource téléchargeable'
                             : 'Contenu de la leçon ci-dessous'}
@@ -141,7 +147,15 @@ export default async function LearnPage({
                     <h2 className="mt-1 text-xl font-bold tracking-tight">{activeLesson.title}</h2>
                   </div>
 
-                  <LessonBody lesson={activeLesson} />
+                  {activeLesson.type === 'QUIZ' && activeQuiz ? (
+                    <QuizPlayer
+                      courseId={course.id}
+                      lessonId={activeLesson.id}
+                      data={activeQuiz}
+                    />
+                  ) : (
+                    <LessonBody lesson={activeLesson} />
+                  )}
 
                   <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/5 pt-4">
                     <div className="flex gap-2">
@@ -160,21 +174,29 @@ export default async function LearnPage({
                       ) : null}
                     </div>
 
-                    <form action={toggleLessonAction}>
-                      <input type="hidden" name="lessonId" value={activeLesson.id} />
-                      <input type="hidden" name="courseId" value={course.id} />
-                      <input
-                        type="hidden"
-                        name="completed"
-                        value={completed.has(activeLesson.id) ? 'false' : 'true'}
-                      />
-                      <button
-                        type="submit"
-                        className={completed.has(activeLesson.id) ? 'btn btn-ghost' : 'btn btn-primary'}
-                      >
-                        {completed.has(activeLesson.id) ? '✓ Terminée — annuler' : 'Marquer comme terminée'}
-                      </button>
-                    </form>
+                    {activeLesson.type === 'QUIZ' ? (
+                      <p className="text-xs text-ink-500">
+                        {completed.has(activeLesson.id)
+                          ? '✓ Leçon validée par le quiz'
+                          : 'Cette leçon se valide en réussissant le quiz.'}
+                      </p>
+                    ) : (
+                      <form action={toggleLessonAction}>
+                        <input type="hidden" name="lessonId" value={activeLesson.id} />
+                        <input type="hidden" name="courseId" value={course.id} />
+                        <input
+                          type="hidden"
+                          name="completed"
+                          value={completed.has(activeLesson.id) ? 'false' : 'true'}
+                        />
+                        <button
+                          type="submit"
+                          className={completed.has(activeLesson.id) ? 'btn btn-ghost' : 'btn btn-primary'}
+                        >
+                          {completed.has(activeLesson.id) ? '✓ Terminée — annuler' : 'Marquer comme terminée'}
+                        </button>
+                      </form>
+                    )}
                   </div>
                 </div>
               </div>

@@ -1,10 +1,11 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CourseStatus, EnrollmentStatus } from '@prisma/client';
+import { CourseStatus, EnrollmentStatus, LessonType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { TenantContext } from '../../common/types/request';
 
@@ -128,9 +129,15 @@ export class EnrollmentsService {
   ) {
     const lesson = await this.prisma.lesson.findFirst({
       where: { id: lessonId, module: { course: { organizationId: tenant.organizationId } } },
-      select: { id: true, module: { select: { courseId: true } } },
+      select: { id: true, type: true, module: { select: { courseId: true } } },
     });
     if (!lesson) throw new NotFoundException('Leçon introuvable');
+
+    if (lesson.type === LessonType.QUIZ) {
+      throw new BadRequestException(
+        'Cette leçon est validée par un quiz : réussissez-le pour la marquer comme terminée.',
+      );
+    }
 
     const courseId = lesson.module.courseId;
     const enrollment = await this.prisma.enrollment.findUnique({
@@ -149,10 +156,25 @@ export class EnrollmentsService {
       update: { completedAt },
     });
 
+    const summary = await this.recomputeProgress(enrollment.id, courseId);
+    return summary;
+  }
+
+  /**
+   * Recalcule et persiste la progression d'une inscription à partir de la base.
+   * Utilisé après une complétion manuelle ou la réussite d'un quiz.
+   */
+  async recomputeProgress(enrollmentId: string, courseId: string) {
+    const enrollment = await this.prisma.enrollment.findUnique({
+      where: { id: enrollmentId },
+      select: { id: true, completedAt: true },
+    });
+    if (!enrollment) throw new NotFoundException('Inscription introuvable');
+
     const [totalLessons, completedLessons] = await Promise.all([
       this.prisma.lesson.count({ where: { module: { courseId } } }),
       this.prisma.lessonProgress.count({
-        where: { enrollmentId: enrollment.id, completedAt: { not: null } },
+        where: { enrollmentId, completedAt: { not: null } },
       }),
     ]);
 
@@ -160,7 +182,7 @@ export class EnrollmentsService {
     const isDone = progressPct >= 100;
 
     const updated = await this.prisma.enrollment.update({
-      where: { id: enrollment.id },
+      where: { id: enrollmentId },
       data: {
         progressPct,
         lastAccessAt: new Date(),

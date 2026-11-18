@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useActionState, useEffect, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
@@ -286,6 +287,14 @@ function ModuleBlock({
               <span className="badge hidden shrink-0 bg-black/5 text-ink-500 sm:inline-flex">
                 {TYPE_LABEL[lesson.type]}
               </span>
+              {lesson.type === 'QUIZ' ? (
+                <Link
+                  href={`/courses/${courseId}/lessons/${lesson.id}/quiz`}
+                  className="shrink-0 text-xs font-semibold text-ink-700 underline hover:text-ink-900"
+                >
+                  Éditer le quiz
+                </Link>
+              ) : null}
               <form action={deleteLessonAction}>
                 <input type="hidden" name="courseId" value={courseId} />
                 <input type="hidden" name="lessonId" value={lesson.id} />

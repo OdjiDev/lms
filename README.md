@@ -113,7 +113,21 @@ quand on passera à un accès DB par transaction avec `SET LOCAL app.org_id`.
 | POST | `/courses/:id/enroll` | membre |
 | GET | `/me/enrollments`, `/courses/:id/my-progress` | membre |
 | POST/DELETE | `/lessons/:id/complete` | inscrit — recalcule la progression |
+| GET | `/lessons/:id/quiz` | inscrit — version sans les corrections |
+| GET | `/lessons/:id/quiz/edit` | staff — version complète |
+| PUT | `/lessons/:id/quiz`, `POST /lessons/:id/quiz/questions` | staff |
+| DELETE | `/lessons/:id/quiz`, `/quiz-questions/:id` | staff |
+| POST | `/lessons/:id/quiz/attempts` | inscrit — correction serveur, valide la leçon si réussi |
+| GET | `/lessons/:id/quiz/results` | staff — résultats agrégés |
 | GET | `/stats` | staff |
+
+## Quiz
+
+- Un quiz est rattaché à une leçon de type `QUIZ` (1 quiz par leçon, 2 à 6 propositions par question).
+- La correction est **toujours serveur** : l'API apprenant ne renvoie jamais `correctOptionId` ni l'explication avant soumission.
+- Une tentative est historisée (`quiz_attempts`) ; le meilleur score fait foi.
+- Réussir le quiz (score ≥ seuil, 70 % par défaut) valide automatiquement la leçon et recalcule la progression.
+- La complétion manuelle (`/lessons/:id/complete`) est refusée sur une leçon quiz.
 
 ## Sécurité
 
@@ -126,7 +140,7 @@ quand on passera à un accès DB par transaction avec `SET LOCAL app.org_id`.
 
 ## Roadmap
 
-1. **Quiz & évaluations** (questions, tentatives, score, auto-correction via FastAPI).
+1. ~~**Quiz & évaluations**~~ ✅ (auto-correction côté NestJS ; scoring avancé FastAPI à venir).
 2. **Certificats** PDF + vérification publique.
 3. **Invitations** par email (Mailpit en dev), import CSV d'apprenants.
 4. **Médias** : stockage S3-compatible (Scaleway, R2, Garage) + URLs présignées, transcodage vidéo.

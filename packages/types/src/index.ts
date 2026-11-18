@@ -118,6 +118,67 @@ export interface MyProgress {
   watchedSecByLesson: Record<string, number>;
 }
 
+// ─────────────────────────────── Quiz ─────────────────────────────────
+
+export interface QuizOption {
+  id: string;
+  text: string;
+}
+
+export interface QuizQuestion {
+  id: string;
+  prompt: string;
+  position: number;
+  options: QuizOption[];
+}
+
+/** Quiz tel que renvoyé au formateur (avec corrections). */
+export interface StaffQuiz {
+  id: string;
+  lessonId: string;
+  passingScore: number;
+  questions: Array<QuizQuestion & { correctOptionId: string; explanation: string | null }>;
+}
+
+export interface QuizAttemptSummary {
+  id: string;
+  score: number;
+  passed: boolean;
+  submittedAt: string;
+}
+
+/** Quiz tel que renvoyé à l'apprenant : sans les bonnes réponses. */
+export interface LearnerQuiz {
+  quiz: {
+    id: string;
+    lessonId: string;
+    passingScore: number;
+    questions: QuizQuestion[];
+  } | null;
+  canAttempt: boolean;
+  bestScore: number | null;
+  passed: boolean;
+  attempts: QuizAttemptSummary[];
+}
+
+export interface QuizCorrection {
+  questionId: string;
+  given: string | null;
+  correctOptionId: string;
+  isCorrect: boolean;
+  explanation: string | null;
+}
+
+export interface QuizSubmissionResult {
+  attempt: QuizAttemptSummary;
+  score: number;
+  passed: boolean;
+  passingScore: number;
+  correct: number;
+  total: number;
+  details: QuizCorrection[];
+}
+
 export interface Paginated<T> {
   items: T[];
   total: number;

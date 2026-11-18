@@ -139,6 +139,70 @@ async function main(): Promise<void> {
 
   const lessons = course.modules.flatMap((m) => m.lessons);
 
+  // ── Quiz de démonstration (idempotent) ───────────────────────────────
+  const QUIZ_TITLE = 'Quiz — Les fondamentaux de l’onboarding';
+  const quizLesson =
+    lessons.find((lesson) => lesson.title === QUIZ_TITLE) ??
+    (await prisma.lesson.create({
+      data: {
+        moduleId: course.modules[1]?.id ?? course.modules[0]!.id,
+        title: QUIZ_TITLE,
+        type: LessonType.QUIZ,
+        durationSec: 300,
+        position: 2,
+      },
+    }));
+
+  const existingQuiz = await prisma.quiz.findUnique({ where: { lessonId: quizLesson.id } });
+
+  if (!existingQuiz) {
+    await prisma.quiz.create({
+      data: {
+        lessonId: quizLesson.id,
+        passingScore: 70,
+        questions: {
+          create: [
+            {
+              prompt: 'Quel est l’objectif principal des 30 premiers jours ?',
+              options: [
+                { id: 'o0', text: 'Tout comprendre immédiatement' },
+                { id: 'o1', text: 'Livrer une première victoire et créer des relations' },
+                { id: 'o2', text: 'Attendre les consignes' },
+              ],
+              correctOptionId: 'o1',
+              explanation:
+                'L’objectif est de créer de la confiance : une victoire rapide et un réseau de relations utiles.',
+              position: 0,
+            },
+            {
+              prompt: 'Combien de personnes faut-il cartographier en priorité ?',
+              options: [
+                { id: 'o0', text: 'Une seule, son manager' },
+                { id: 'o1', text: 'Une dizaine de personnes influentes' },
+                { id: 'o2', text: 'Toute l’entreprise' },
+              ],
+              correctOptionId: 'o1',
+              explanation:
+                'Une dizaine de relations clés suffisent pour comprendre l’organisation sans se disperser.',
+              position: 1,
+            },
+            {
+              prompt: 'Qu’est-ce qu’une « victoire rapide » ?',
+              options: [
+                { id: 'o0', text: 'Un projet long et complexe' },
+                { id: 'o1', text: 'Un résultat utile et visible en quelques jours' },
+                { id: 'o2', text: 'Une réunion supplémentaire' },
+              ],
+              correctOptionId: 'o1',
+              explanation: 'Elle doit être utile, visible et réalisable rapidement.',
+              position: 2,
+            },
+          ],
+        },
+      },
+    });
+  }
+
   // Inscription de l'apprenant + une leçon terminée.
   const enrollment = await prisma.enrollment.upsert({
     where: { courseId_userId: { courseId: course.id, userId: learner.id } },
@@ -150,27 +214,34 @@ async function main(): Promise<void> {
     },
   });
 
-  if (lessons[0]) {
+  const firstLesson = lessons[0];
+  if (firstLesson) {
     await prisma.lessonProgress.upsert({
-      where: { enrollmentId_lessonId: { enrollmentId: enrollment.id, lessonId: lessons[0].id } },
+      where: { enrollmentId_lessonId: { enrollmentId: enrollment.id, lessonId: firstLesson.id } },
       update: {},
       create: {
         enrollmentId: enrollment.id,
-        lessonId: lessons[0].id,
+        lessonId: firstLesson.id,
         completedAt: new Date(),
-        watchedSec: lessons[0].durationSec,
-      },
-    });
-
-    const total = await prisma.lesson.count({ where: { module: { courseId: course.id } } });
-    await prisma.enrollment.update({
-      where: { id: enrollment.id },
-      data: {
-        progressPct: Math.round((1 / total) * 100),
-        lastAccessAt: new Date(),
+        watchedSec: firstLesson.durationSec,
       },
     });
   }
+
+  const [total, completed] = await Promise.all([
+    prisma.lesson.count({ where: { module: { courseId: course.id } } }),
+    prisma.lessonProgress.count({
+      where: { enrollmentId: enrollment.id, completedAt: { not: null } },
+    }),
+  ]);
+
+  await prisma.enrollment.update({
+    where: { id: enrollment.id },
+    data: {
+      progressPct: total === 0 ? 0 : Math.round((completed / total) * 100),
+      lastAccessAt: new Date(),
+    },
+  });
 
   console.log(`
 ✅ Seed terminé

@@ -11,6 +11,7 @@ import { CoursesModule } from './modules/courses/courses.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { HealthModule } from './modules/health/health.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { QuizzesModule } from './modules/quizzes/quizzes.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -27,6 +28,7 @@ import { UsersModule } from './modules/users/users.module';
     EnrollmentsModule,
     UsersModule,
     OrganizationsModule,
+    QuizzesModule,
     HealthModule,
   ],
   providers: [

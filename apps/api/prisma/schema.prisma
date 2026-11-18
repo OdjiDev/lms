@@ -54,6 +54,7 @@ model User {
   memberships   Membership[]
   enrollments   Enrollment[]
   refreshTokens RefreshToken[]
+  quizAttempts  QuizAttempt[]
 
   @@map("users")
 }
@@ -167,9 +168,63 @@ model Lesson {
 
   module   Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   progress LessonProgress[]
+  quiz     Quiz?
 
   @@unique([moduleId, position])
   @@map("lessons")
+}
+
+// ─────────────────────────────── Quiz ──────────────────────────────────
+
+model Quiz {
+  id           String   @id @default(uuid()) @db.Uuid
+  lessonId     String   @unique @db.Uuid
+  passingScore Int      @default(70)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  lesson    Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions QuizQuestion[]
+  attempts  QuizAttempt[]
+
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id              String   @id @default(uuid()) @db.Uuid
+  quizId          String   @db.Uuid
+  prompt          String
+  /// [{ id: "o0", text: "…" }]
+  options         Json
+  correctOptionId String
+  explanation     String?
+  position        Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+  @@map("quiz_questions")
+}
+
+model QuizAttempt {
+  id           String   @id @default(uuid()) @db.Uuid
+  quizId       String   @db.Uuid
+  userId       String   @db.Uuid
+  enrollmentId String?  @db.Uuid
+  score        Int
+  passed       Boolean
+  /// { [questionId]: optionId }
+  answers      Json
+  submittedAt  DateTime @default(now())
+
+  quiz       Quiz        @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollment Enrollment? @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+
+  @@index([quizId, userId])
+  @@index([enrollmentId])
+  @@map("quiz_attempts")
 }
 
 // ────────────────────────────── Progression ────────────────────────────
@@ -195,6 +250,7 @@ model Enrollment {
   course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   lessonProgress LessonProgress[]
+  quizAttempts   QuizAttempt[]
 
   @@unique([courseId, userId])
   @@index([organizationId, userId])
