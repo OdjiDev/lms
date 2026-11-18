@@ -5,7 +5,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CourseStatus, EnrollmentStatus, LessonType } from '@prisma/client';
+import { CourseStatus, EnrollmentStatus, LessonType, Prisma } from '@prisma/client';
+import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { TenantContext } from '../../common/types/request';
 
@@ -99,11 +100,19 @@ export class EnrollmentsService {
   async myProgress(tenant: TenantContext, userId: string, courseId: string) {
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { courseId_userId: { courseId, userId } },
-      include: { lessonProgress: true },
+      include: {
+        lessonProgress: true,
+        certificate: { select: { id: true, serial: true, issuedAt: true } },
+      },
     });
 
     if (!enrollment || enrollment.organizationId !== tenant.organizationId) {
-      return { enrollment: null, completedLessonIds: [], watchedSecByLesson: {} };
+      return {
+        enrollment: null,
+        completedLessonIds: [],
+        watchedSecByLesson: {},
+        certificate: null,
+      };
     }
 
     return {
@@ -114,6 +123,7 @@ export class EnrollmentsService {
       watchedSecByLesson: Object.fromEntries(
         enrollment.lessonProgress.map((p) => [p.lessonId, p.watchedSec]),
       ),
+      certificate: enrollment.certificate,
     };
   }
 
@@ -167,7 +177,13 @@ export class EnrollmentsService {
   async recomputeProgress(enrollmentId: string, courseId: string) {
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { id: enrollmentId },
-      select: { id: true, completedAt: true },
+      select: {
+        id: true,
+        completedAt: true,
+        organizationId: true,
+        courseId: true,
+        userId: true,
+      },
     });
     if (!enrollment) throw new NotFoundException('Inscription introuvable');
 
@@ -191,6 +207,11 @@ export class EnrollmentsService {
       },
     });
 
+    // Parcours terminé : le certificat est émis une seule fois, en base.
+    if (isDone) {
+      await this.ensureCertificate(enrollment);
+    }
+
     return {
       enrollmentId: updated.id,
       progressPct,
@@ -198,6 +219,50 @@ export class EnrollmentsService {
       completedLessons,
       totalLessons,
     };
+  }
+
+  /**
+   * Émet le certificat d'une inscription terminée (idempotent).
+   * Le numéro de série est aléatoire et unique ; il sert à la vérification publique.
+   */
+  private async ensureCertificate(enrollment: {
+    id: string;
+    organizationId: string;
+    courseId: string;
+    userId: string;
+  }) {
+    const existing = await this.prisma.certificate.findUnique({
+      where: { enrollmentId: enrollment.id },
+    });
+    if (existing) return existing;
+
+    const year = new Date().getFullYear();
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const serial = `LMS-${year}-${randomBytes(4).toString('hex').toUpperCase()}`;
+      try {
+        return await this.prisma.certificate.create({
+          data: {
+            organizationId: enrollment.organizationId,
+            courseId: enrollment.courseId,
+            userId: enrollment.userId,
+            enrollmentId: enrollment.id,
+            serial,
+          },
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          const created = await this.prisma.certificate.findUnique({
+            where: { enrollmentId: enrollment.id },
+          });
+          if (created) return created;
+          continue; // collision de série : on retente
+        }
+        throw error;
+      }
+    }
+
+    throw new ConflictException('Impossible de générer un numéro de certificat unique');
   }
 
   /** Stats agrégées pour le tableau de bord formateur. */

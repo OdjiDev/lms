@@ -116,6 +116,35 @@ export interface MyProgress {
   enrollment: Enrollment | null;
   completedLessonIds: string[];
   watchedSecByLesson: Record<string, number>;
+  certificate: { id: string; serial: string; issuedAt: string } | null;
+}
+
+// ──────────────────────────── Certificats ─────────────────────────────
+
+export interface Certificate {
+  id: string;
+  serial: string;
+  issuedAt: string;
+  course: {
+    id: string;
+    title: string;
+    slug: string;
+    durationMin: number;
+    level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+  };
+  user: { id: string; firstName: string; lastName: string; email: string };
+  organization: { id: string; name: string; slug: string };
+}
+
+/** Réponse publique de vérification — aucune donnée sensible. */
+export interface PublicCertificate {
+  valid: true;
+  serial: string;
+  issuedAt: string;
+  learnerName: string;
+  courseTitle: string;
+  courseDurationMin: number;
+  organizationName: string;
 }
 
 // ─────────────────────────────── Quiz ─────────────────────────────────

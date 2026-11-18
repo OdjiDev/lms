@@ -82,6 +82,14 @@ export async function enrollAction(formData: FormData): Promise<void> {
   redirect(`/learn/${courseId}`);
 }
 
+// ── Certificats ────────────────────────────────────────────────────────
+
+export async function verifyCertificateAction(formData: FormData): Promise<void> {
+  const serial = String(formData.get('serial') ?? '').trim().toUpperCase();
+  if (!serial) return;
+  redirect(`/verify/${encodeURIComponent(serial)}`);
+}
+
 // ── Édition du cours et de son programme (staff) ───────────────────────
 
 export async function updateCourseAction(

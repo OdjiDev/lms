@@ -119,6 +119,10 @@ quand on passera à un accès DB par transaction avec `SET LOCAL app.org_id`.
 | DELETE | `/lessons/:id/quiz`, `/quiz-questions/:id` | staff |
 | POST | `/lessons/:id/quiz/attempts` | inscrit — correction serveur, valide la leçon si réussi |
 | GET | `/lessons/:id/quiz/results` | staff — résultats agrégés |
+| GET | `/me/certificates` | membre — ses certificats |
+| GET | `/certificates/:id` | titulaire ou staff |
+| GET | `/courses/:id/certificates` | staff — certificats délivrés |
+| GET | `/certificates/verify/:serial` | **public** — vérification d'authenticité |
 | GET | `/stats` | staff |
 
 ## Quiz
@@ -128,6 +132,14 @@ quand on passera à un accès DB par transaction avec `SET LOCAL app.org_id`.
 - Une tentative est historisée (`quiz_attempts`) ; le meilleur score fait foi.
 - Réussir le quiz (score ≥ seuil, 70 % par défaut) valide automatiquement la leçon et recalcule la progression.
 - La complétion manuelle (`/lessons/:id/complete`) est refusée sur une leçon quiz.
+
+## Certificats
+
+- Émis **automatiquement** dès que la progression d'une inscription atteint 100 % (`ensureCertificate`, idempotent : un seul certificat par inscription).
+- Numéro de série aléatoire `LMS-<année>-<8 hex majuscules>` (unique en base), servant à la vérification publique.
+- Rendu : page imprimable A4 paysage → « Imprimer / Enregistrer en PDF ». Aucune dépendance de génération PDF côté serveur.
+- Vérification publique `/verify/<série>` : n'expose que le nom du titulaire, le titre du parcours, l'organisation et la date — jamais l'email ni les résultats détaillés.
+- Routes API : `GET /me/certificates`, `GET /certificates/:id` (titulaire ou staff), `GET /courses/:id/certificates` (staff), `GET /certificates/verify/:serial` (public).
 
 ## Sécurité
 
@@ -141,7 +153,7 @@ quand on passera à un accès DB par transaction avec `SET LOCAL app.org_id`.
 ## Roadmap
 
 1. ~~**Quiz & évaluations**~~ ✅ (auto-correction côté NestJS ; scoring avancé FastAPI à venir).
-2. **Certificats** PDF + vérification publique.
+2. ~~**Certificats**~~ ✅ (émission automatique, rendu imprimable A4, vérification publique).
 3. **Invitations** par email (Mailpit en dev), import CSV d'apprenants.
 4. **Médias** : stockage S3-compatible (Scaleway, R2, Garage) + URLs présignées, transcodage vidéo.
 5. **Analytics** : temps de visionnage, taux d'abandon par leçon, cohortes.

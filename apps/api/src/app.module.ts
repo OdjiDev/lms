@@ -7,6 +7,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { TenantGuard } from './common/guards/tenant.guard';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CertificatesModule } from './modules/certificates/certificates.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { HealthModule } from './modules/health/health.module';
@@ -25,6 +26,7 @@ import { UsersModule } from './modules/users/users.module';
     PrismaModule,
     AuthModule,
     CoursesModule,
+    CertificatesModule,
     EnrollmentsModule,
     UsersModule,
     OrganizationsModule,

@@ -1,7 +1,13 @@
 import Link from 'next/link';
 import { apiSafe } from '@/lib/api';
 import { canManage, requireSession } from '@/lib/session';
-import type { CourseCard as CourseCardType, Enrollment, OrgStats, Paginated } from '@/lib/types';
+import type {
+  Certificate,
+  CourseCard as CourseCardType,
+  Enrollment,
+  OrgStats,
+  Paginated,
+} from '@/lib/types';
 import { CourseCard } from '@/components/course-card';
 import { EmptyState, ProgressBar, StatCard } from '@/components/ui';
 
@@ -9,14 +15,17 @@ export default async function DashboardPage() {
   const { me, active } = await requireSession();
   const staff = canManage(active.role);
 
-  const [stats, enrollments, courses] = await Promise.all([
+  const [stats, enrollments, courses, certificates] = await Promise.all([
     staff ? apiSafe<OrgStats>('/stats') : Promise.resolve(null),
     apiSafe<Enrollment[]>('/me/enrollments'),
     apiSafe<Paginated<CourseCardType>>('/courses?limit=6'),
+    apiSafe<Certificate[]>('/me/certificates'),
   ]);
 
   const myEnrollments = (enrollments ?? []).filter((item) => item.status !== 'CANCELLED');
   const inProgress = myEnrollments.filter((item) => item.status === 'ACTIVE');
+  const myCertificates = certificates ?? [];
+  const completedCount = myEnrollments.filter((item) => item.status === 'COMPLETED').length;
 
   return (
     <div className="space-y-8">
@@ -88,6 +97,46 @@ export default async function DashboardPage() {
           actionLabel="Découvrir le catalogue"
         />
       )}
+
+      {myCertificates.length > 0 ? (
+        <section>
+          <div className="mb-4 flex items-end justify-between">
+            <h2 className="text-lg font-bold tracking-tight">Mes certificats</h2>
+            <span className="text-sm text-ink-500">
+              {myCertificates.length} obtenu{myCertificates.length > 1 ? 's' : ''}
+            </span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {myCertificates.map((certificate) => (
+              <div key={certificate.id} className="card flex flex-col gap-3 p-4">
+                <div className="flex items-start gap-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-200 text-lg">
+                    🎓
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{certificate.course.title}</p>
+                    <p className="mt-0.5 font-mono text-xs text-ink-500">{certificate.serial}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-ink-500">
+                    {new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' }).format(
+                      new Date(certificate.issuedAt),
+                    )}
+                  </span>
+                  <Link href={`/certificates/${certificate.id}`} className="btn btn-ghost">
+                    Voir / Imprimer
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : completedCount > 0 ? (
+        <section className="card p-5 text-sm text-ink-500">
+          Vos parcours terminés apparaîtront ici dès que le certificat sera généré.
+        </section>
+      ) : null}
 
       <section>
         <div className="mb-4 flex items-end justify-between">

@@ -24,9 +24,10 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships Membership[]
-  courses     Course[]
-  enrollments Enrollment[]
+  memberships   Membership[]
+  courses       Course[]
+  enrollments   Enrollment[]
+  certificates  Certificate[]
 
   @@map("organizations")
 }
@@ -55,6 +56,7 @@ model User {
   enrollments   Enrollment[]
   refreshTokens RefreshToken[]
   quizAttempts  QuizAttempt[]
+  certificates  Certificate[]
 
   @@map("users")
 }
@@ -125,6 +127,7 @@ model Course {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   modules      Module[]
   enrollments  Enrollment[]
+  certificates Certificate[]
 
   @@unique([organizationId, slug])
   @@index([organizationId, status])
@@ -227,6 +230,28 @@ model QuizAttempt {
   @@map("quiz_attempts")
 }
 
+// ──────────────────────────── Certificats ──────────────────────────────
+
+model Certificate {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  courseId       String   @db.Uuid
+  userId         String   @db.Uuid
+  enrollmentId   String   @unique @db.Uuid
+  /// Identifiant public de vérification, ex. LMS-2026-8F3A2C1D
+  serial         String   @unique
+  issuedAt       DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollment   Enrollment   @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([organizationId, issuedAt])
+  @@map("certificates")
+}
+
 // ────────────────────────────── Progression ────────────────────────────
 
 enum EnrollmentStatus {
@@ -251,6 +276,7 @@ model Enrollment {
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   lessonProgress LessonProgress[]
   quizAttempts   QuizAttempt[]
+  certificate    Certificate?
 
   @@unique([courseId, userId])
   @@index([organizationId, userId])

@@ -130,7 +130,12 @@ export default async function LandingPage() {
       </main>
 
       <footer className="border-t border-white/10 py-8 text-center text-xs text-white/35">
-        Yellow LMS · Next.js · NestJS · PostgreSQL · FastAPI
+        <p>Yellow LMS · Next.js · NestJS · PostgreSQL · FastAPI</p>
+        <p className="mt-2">
+          <Link href="/verify" className="underline hover:text-white/60">
+            Vérifier un certificat
+          </Link>
+        </p>
       </footer>
     </div>
   );

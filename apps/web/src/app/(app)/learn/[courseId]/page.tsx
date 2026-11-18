@@ -68,6 +68,18 @@ export default async function LearnPage({
         </div>
       </div>
 
+      {progress.certificate ? (
+        <div className="card flex flex-wrap items-center justify-between gap-3 border-brand-500 bg-brand-200/30 px-5 py-4">
+          <p className="text-sm font-semibold">
+            🎓 Parcours terminé — certificat n°{' '}
+            <span className="font-mono">{progress.certificate.serial}</span>
+          </p>
+          <Link href={`/certificates/${progress.certificate.id}`} className="btn btn-dark">
+            Voir mon certificat
+          </Link>
+        </div>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
         <aside className="card h-fit overflow-hidden">
           <p className="border-b border-black/5 px-4 py-3 text-xs font-bold uppercase tracking-wider text-ink-500">
