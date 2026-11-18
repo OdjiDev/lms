@@ -5,6 +5,7 @@ import { canManage, requireSession } from '@/lib/session';
 import type { CourseDetail, MyProgress } from '@/lib/types';
 import { enrollAction, publishCourseAction } from '@/app/actions';
 import { ProgressBar, StatusBadge, formatMinutes } from '@/components/ui';
+import { CourseAdmin } from './course-admin';
 
 const TYPE_LABEL: Record<string, string> = {
   VIDEO: 'Vidéo',
@@ -113,6 +114,13 @@ export default async function CoursePage({
           </div>
         </div>
       </header>
+
+      {staff ? (
+        <CourseAdmin
+          course={course}
+          canDelete={active.role === 'OWNER' || active.role === 'ADMIN'}
+        />
+      ) : null}
 
       <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
         <section>
