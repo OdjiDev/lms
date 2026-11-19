@@ -123,6 +123,11 @@ quand on passera à un accès DB par transaction avec `SET LOCAL app.org_id`.
 | GET | `/certificates/:id` | titulaire ou staff |
 | GET | `/courses/:id/certificates` | staff — certificats délivrés |
 | GET | `/certificates/verify/:serial` | **public** — vérification d'authenticité |
+| GET | `/invitations` | staff — invitations de l'organisation |
+| POST | `/invitations` | OWNER/ADMIN — envoi d'un lien personnel |
+| POST | `/invitations/:id/resend`, `DELETE /invitations/:id` | OWNER/ADMIN — renvoi / annulation |
+| GET | `/invitations/:token` | **public** — aperçu avant acceptation |
+| POST | `/invitations/:token/accept` | **public** — création du compte + rattachement + session |
 | GET | `/stats` | staff |
 
 ## Quiz
@@ -141,6 +146,15 @@ quand on passera à un accès DB par transaction avec `SET LOCAL app.org_id`.
 - Vérification publique `/verify/<série>` : n'expose que le nom du titulaire, le titre du parcours, l'organisation et la date — jamais l'email ni les résultats détaillés.
 - Routes API : `GET /me/certificates`, `GET /certificates/:id` (titulaire ou staff), `GET /courses/:id/certificates` (staff), `GET /certificates/verify/:serial` (public).
 
+## Invitations
+
+- Le staff (OWNER/ADMIN) invite par email depuis **Équipe & invitations** : rôle (hors propriétaire), rattachement optionnel à un cours (inscription automatique).
+- Jeton aléatoire de 32 octets, **seule son empreinte SHA-256 est stockée** ; validité 7 jours, usage unique.
+- Email envoyé via SMTP (Mailpit en dev, UI sur `http://localhost:8025`).
+- La page `/invite/<jeton>` est publique : elle affiche l'organisation, le rôle et le parcours, puis crée le compte (ou rattache un compte existant après vérification du mot de passe) et ouvre directement une session.
+- Renvoi : le jeton précédent est invalidé. Annulation : l'invitation passe en `REVOKED`.
+- Statuts : `PENDING`, `ACCEPTED`, `REVOKED`, `EXPIRED` (calculé à l'expiration).
+
 ## Sécurité
 
 - Mots de passe : Argon2id (`@node-rs/argon2`, 19 MiB / 2 passes).
@@ -154,7 +168,7 @@ quand on passera à un accès DB par transaction avec `SET LOCAL app.org_id`.
 
 1. ~~**Quiz & évaluations**~~ ✅ (auto-correction côté NestJS ; scoring avancé FastAPI à venir).
 2. ~~**Certificats**~~ ✅ (émission automatique, rendu imprimable A4, vérification publique).
-3. **Invitations** par email (Mailpit en dev), import CSV d'apprenants.
+3. ~~**Invitations**~~ ✅ (email Mailpit en dev, jeton à usage unique, rattachement + inscription). Import CSV à venir.
 4. **Médias** : stockage S3-compatible (Scaleway, R2, Garage) + URLs présignées, transcodage vidéo.
 5. **Analytics** : temps de visionnage, taux d'abandon par leçon, cohortes.
 6. **RLS Postgres** activé + tests d'isolation inter-tenant.

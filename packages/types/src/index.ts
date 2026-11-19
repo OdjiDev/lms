@@ -224,3 +224,39 @@ export interface AuthSession {
   organizations: OrganizationSummary[];
   activeOrganizationId: string;
 }
+
+// ──────────────────────────── Invitations ─────────────────────────────
+
+export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'REVOKED' | 'EXPIRED';
+
+export interface Invitation {
+  id: string;
+  email: string;
+  role: Role;
+  status: InvitationStatus;
+  course: { id: string; title: string; slug: string } | null;
+  invitedBy: { id: string; firstName: string; lastName: string };
+  expiresAt: string;
+  acceptedAt?: string | null;
+  revokedAt?: string | null;
+  createdAt: string;
+}
+
+export interface CreatedInvitation {
+  invitation: Invitation;
+  /** Lien d'acceptation — utile en développement (l'email part vers Mailpit). */
+  acceptUrl: string;
+}
+
+/** Aperçu public d'une invitation, renvoyé avant acceptation. */
+export interface InvitationPreview {
+  email: string;
+  role: Role;
+  roleLabel: string;
+  organizationName: string;
+  courseTitle: string | null;
+  invitedByName: string;
+  status: InvitationStatus;
+  expiresAt: string;
+  needsAccount: boolean;
+}

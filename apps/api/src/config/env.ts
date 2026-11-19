@@ -14,6 +14,12 @@ export const envSchema = z.object({
   JWT_REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(30),
 
   ML_SERVICE_URL: z.string().url().default('http://localhost:8000'),
+
+  SMTP_HOST: z.string().default('localhost'),
+  SMTP_PORT: z.coerce.number().int().positive().default(1025),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  SMTP_FROM: z.string().default('Yellow LMS <no-reply@yellow.academy>'),
 });
 
 export type Env = z.infer<typeof envSchema>;

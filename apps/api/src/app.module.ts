@@ -11,6 +11,8 @@ import { CertificatesModule } from './modules/certificates/certificates.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { HealthModule } from './modules/health/health.module';
+import { InvitationsModule } from './modules/invitations/invitations.module';
+import { MailModule } from './modules/mail/mail.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { QuizzesModule } from './modules/quizzes/quizzes.module';
 import { UsersModule } from './modules/users/users.module';
@@ -24,6 +26,7 @@ import { UsersModule } from './modules/users/users.module';
       validate: validateEnv,
     }),
     PrismaModule,
+    MailModule,
     AuthModule,
     CoursesModule,
     CertificatesModule,
@@ -31,6 +34,7 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
     OrganizationsModule,
     QuizzesModule,
+    InvitationsModule,
     HealthModule,
   ],
   providers: [

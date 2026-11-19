@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { ApiError, api } from '@/lib/api';
-import type { QuizSubmissionResult } from '@/lib/types';
+import type { CreatedInvitation, QuizSubmissionResult } from '@/lib/types';
 
 export interface FormState {
   error?: string;
@@ -412,4 +412,53 @@ export async function toggleLessonAction(formData: FormData): Promise<void> {
   revalidatePath(`/learn/${courseId}`);
   revalidatePath(`/courses/${courseId}`);
   revalidatePath('/dashboard');
+}
+
+// ── Invitations (staff) ───────────────────────────────────────────────
+
+export interface InviteFormState {
+  error?: string;
+  ok?: boolean;
+  acceptUrl?: string;
+  email?: string;
+}
+
+export async function createInvitationAction(
+  _prev: InviteFormState,
+  formData: FormData,
+): Promise<InviteFormState> {
+  const email = String(formData.get('email') ?? '').trim();
+  const role = String(formData.get('role') ?? 'LEARNER');
+  const courseId = String(formData.get('courseId') ?? '').trim();
+
+  if (!email.includes('@')) {
+    return { error: 'Saisissez une adresse email valide.' };
+  }
+
+  try {
+    const created = await api<CreatedInvitation>('/invitations', {
+      method: 'POST',
+      body: { email, role, courseId: courseId || undefined },
+    });
+
+    revalidatePath('/team');
+    return { ok: true, acceptUrl: created.acceptUrl, email: created.invitation.email };
+  } catch (error) {
+    if (error instanceof ApiError) return { error: error.message };
+    throw error;
+  }
+}
+
+export async function resendInvitationAction(formData: FormData): Promise<void> {
+  const id = String(formData.get('invitationId') ?? '');
+  if (!id) return;
+  await api(`/invitations/${id}/resend`, { method: 'POST' });
+  revalidatePath('/team');
+}
+
+export async function revokeInvitationAction(formData: FormData): Promise<void> {
+  const id = String(formData.get('invitationId') ?? '');
+  if (!id) return;
+  await api(`/invitations/${id}`, { method: 'DELETE' });
+  revalidatePath('/team');
 }

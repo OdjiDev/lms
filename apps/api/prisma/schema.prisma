@@ -28,6 +28,7 @@ model Organization {
   courses       Course[]
   enrollments   Enrollment[]
   certificates  Certificate[]
+  invitations   Invitation[]
 
   @@map("organizations")
 }
@@ -57,6 +58,7 @@ model User {
   refreshTokens RefreshToken[]
   quizAttempts  QuizAttempt[]
   certificates  Certificate[]
+  invitations   Invitation[]   @relation("SentInvitations")
 
   @@map("users")
 }
@@ -128,6 +130,7 @@ model Course {
   modules      Module[]
   enrollments  Enrollment[]
   certificates Certificate[]
+  invitations  Invitation[]
 
   @@unique([organizationId, slug])
   @@index([organizationId, status])
@@ -297,4 +300,39 @@ model LessonProgress {
   @@unique([enrollmentId, lessonId])
   @@index([lessonId])
   @@map("lesson_progress")
+}
+
+// ──────────────────────────── Invitations ──────────────────────────────
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+model Invitation {
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @db.Uuid
+  email          String           @db.Citext
+  role           Role             @default(LEARNER)
+  /// Cours auquel l'apprenant est inscrit automatiquement à l'acceptation.
+  courseId       String?          @db.Uuid
+  /// Empreinte SHA-256 du jeton envoyé par email (le jeton brut n'est jamais stocké).
+  tokenHash      String           @unique
+  status         InvitationStatus @default(PENDING)
+  invitedById    String           @db.Uuid
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  course       Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  invitedBy    User         @relation("SentInvitations", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, status])
+  @@index([organizationId, email])
+  @@map("invitations")
 }
