@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { CourseStatus } from '@/lib/types';
+import { BookIcon } from '@/components/icons';
 
 export function StatusBadge({ status }: { status: CourseStatus }) {
   const map: Record<CourseStatus, { label: string; className: string }> = {
@@ -78,7 +79,9 @@ export function EmptyState({
 }) {
   return (
     <div className="card flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-      <div className="grid size-12 place-items-center rounded-2xl bg-brand-200 text-2xl">🟡</div>
+      <div className="grid size-12 place-items-center rounded-2xl bg-brand-200 text-ink-800">
+        <BookIcon className="size-6" />
+      </div>
       <p className="text-base font-semibold text-ink-900">{title}</p>
       {description ? <p className="max-w-md text-sm text-ink-500">{description}</p> : null}
       {actionHref && actionLabel ? (

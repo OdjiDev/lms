@@ -5,11 +5,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { switchOrganizationAction } from '@/app/actions';
 import type { MeResponse } from '@/lib/types';
+import { BookIcon, DashboardIcon, MenuIcon, PlusIcon, UsersIcon } from '@/components/icons';
 
 const NAV = [
-  { href: '/dashboard', label: 'Tableau de bord', icon: '◧' },
-  { href: '/courses', label: 'Catalogue', icon: '▤' },
-];
+  { href: '/dashboard', label: 'Tableau de bord', icon: DashboardIcon },
+  { href: '/courses', label: 'Catalogue', icon: BookIcon },
+  { href: '/team', label: 'Équipe', icon: UsersIcon, staffOnly: true },
+] as const;
 
 export function AppShell({
   user,
@@ -55,8 +57,8 @@ export function AppShell({
         }`}
       >
         <Link href="/dashboard" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-          <span className="grid size-9 place-items-center rounded-xl bg-brand-500 text-lg text-ink-950">
-            ◐
+          <span className="grid size-9 place-items-center rounded-xl bg-brand-500 text-base font-black text-ink-950">
+            Y
           </span>
           <span className="text-sm font-bold leading-tight">
             Yellow LMS
@@ -83,8 +85,9 @@ export function AppShell({
         </div>
 
         <nav className="mt-6 space-y-1">
-          {NAV.map((item) => {
+          {NAV.filter((item) => !('staffOnly' in item && item.staffOnly) || canManage).map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
@@ -94,7 +97,7 @@ export function AppShell({
                   isActive ? 'bg-brand-500 text-ink-950' : 'text-white/70 hover:bg-white/5 hover:text-white'
                 }`}
               >
-                <span className="text-base">{item.icon}</span>
+                <Icon className="size-[18px]" />
                 {item.label}
               </Link>
             );
@@ -105,7 +108,7 @@ export function AppShell({
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/5 hover:text-white"
             >
-              <span className="text-base">＋</span>
+              <PlusIcon className="size-[18px]" />
               Nouveau cours
             </Link>
           ) : null}
@@ -151,7 +154,7 @@ export function AppShell({
             className="btn btn-ghost px-3 py-2"
             aria-label="Ouvrir le menu"
           >
-            ☰
+            <MenuIcon className="size-5" />
           </button>
           <span className="text-sm font-bold">Yellow LMS</span>
         </header>

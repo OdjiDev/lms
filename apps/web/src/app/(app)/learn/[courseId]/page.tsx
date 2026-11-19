@@ -4,6 +4,7 @@ import { apiSafe } from '@/lib/api';
 import { requireSession } from '@/lib/session';
 import type { CourseDetail, LearnerQuiz, Lesson, MyProgress } from '@/lib/types';
 import { toggleLessonAction } from '@/app/actions';
+import { AwardIcon, CheckIcon, ChevronRightIcon, DownloadIcon } from '@/components/icons';
 import { ProgressBar } from '@/components/ui';
 import { QuizPlayer } from './quiz-player';
 
@@ -70,8 +71,9 @@ export default async function LearnPage({
 
       {progress.certificate ? (
         <div className="card flex flex-wrap items-center justify-between gap-3 border-brand-500 bg-brand-200/30 px-5 py-4">
-          <p className="text-sm font-semibold">
-            🎓 Parcours terminé — certificat n°{' '}
+          <p className="flex items-center gap-2 text-sm font-semibold">
+            <AwardIcon className="size-5 text-ink-800" />
+            Parcours terminé — certificat n°{' '}
             <span className="font-mono">{progress.certificate.serial}</span>
           </p>
           <Link href={`/certificates/${progress.certificate.id}`} className="btn btn-dark">
@@ -245,7 +247,8 @@ function LessonBody({ lesson }: { lesson: Lesson }) {
 
       {content?.fileUrl ? (
         <a href={content.fileUrl} className="btn btn-ghost" target="_blank" rel="noreferrer">
-          ⬇ Télécharger la ressource
+          <DownloadIcon className="size-4" />
+          Télécharger la ressource
         </a>
       ) : null}
 

@@ -9,6 +9,7 @@ import type {
   Paginated,
 } from '@/lib/types';
 import { CourseCard } from '@/components/course-card';
+import { AwardIcon } from '@/components/icons';
 import { EmptyState, ProgressBar, StatCard } from '@/components/ui';
 
 export default async function DashboardPage() {
@@ -32,7 +33,7 @@ export default async function DashboardPage() {
       <div>
         <p className="text-sm font-medium text-ink-500">{active.organization.name}</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
-          Bonjour {me.firstName} 👋
+          Bonjour {me.firstName}
         </h1>
         <p className="mt-1 text-sm text-ink-500">
           {staff
@@ -84,7 +85,7 @@ export default async function DashboardPage() {
             ))}
             {inProgress.length === 0 ? (
               <div className="card p-5 text-sm text-ink-500">
-                Tous vos parcours sont terminés. Beau travail 🎉
+                Tous vos parcours sont terminés. Beau travail.
               </div>
             ) : null}
           </div>
@@ -110,8 +111,8 @@ export default async function DashboardPage() {
             {myCertificates.map((certificate) => (
               <div key={certificate.id} className="card flex flex-col gap-3 p-4">
                 <div className="flex items-start gap-3">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-200 text-lg">
-                    🎓
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-200 text-ink-800">
+                    <AwardIcon className="size-5" />
                   </span>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{certificate.course.title}</p>

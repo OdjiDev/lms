@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { apiSafe } from '@/lib/api';
 import type { PublicCertificate } from '@/lib/types';
+import { CheckIcon, CrossIcon } from '@/components/icons';
 import { formatMinutes } from '@/components/ui';
 
 export default async function VerifyCertificatePage({
@@ -32,7 +33,7 @@ export default async function VerifyCertificatePage({
         <div className="card overflow-hidden">
           <div className="flex items-center gap-3 bg-emerald-50 px-6 py-4 text-emerald-800">
             <span className="grid size-8 place-items-center rounded-full bg-emerald-600 text-white">
-              ✓
+              <CheckIcon className="size-4" />
             </span>
             <p className="text-sm font-bold">Certificat authentique</p>
           </div>
@@ -68,7 +69,9 @@ export default async function VerifyCertificatePage({
       ) : (
         <div className="card overflow-hidden">
           <div className="flex items-center gap-3 bg-red-50 px-6 py-4 text-red-800">
-            <span className="grid size-8 place-items-center rounded-full bg-red-600 text-white">✗</span>
+            <span className="grid size-8 place-items-center rounded-full bg-red-600 text-white">
+              <CrossIcon className="size-4" />
+            </span>
             <p className="text-sm font-bold">Certificat introuvable</p>
           </div>
           <div className="px-6 py-6">

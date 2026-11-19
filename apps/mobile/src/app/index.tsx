@@ -63,7 +63,7 @@ export default function MyCoursesScreen() {
       >
         <View style={styles.header}>
           <Text style={styles.eyebrow}>{organizationName}</Text>
-          <Text style={styles.title}>Bonjour {user?.firstName ?? ''} 👋</Text>
+          <Text style={styles.title}>Bonjour {user?.firstName ?? ''}</Text>
           <Text style={styles.subtitle}>Reprenez votre formation là où vous l’avez laissée.</Text>
         </View>
 

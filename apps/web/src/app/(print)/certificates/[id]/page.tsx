@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { apiSafe } from '@/lib/api';
 import { requireSession } from '@/lib/session';
 import type { Certificate } from '@/lib/types';
+import { AwardIcon } from '@/components/icons';
 import { formatMinutes } from '@/components/ui';
 import { PrintButton } from '../../print-button';
 
@@ -39,8 +40,8 @@ export default async function CertificatePage({ params }: { params: Promise<{ id
             {certificate.organization.name}
           </p>
 
-          <div className="mx-auto mt-6 grid size-16 place-items-center rounded-full bg-brand-500 text-2xl text-ink-950">
-            ★
+          <div className="mx-auto mt-6 grid size-16 place-items-center rounded-full bg-brand-500 text-ink-950">
+            <AwardIcon className="size-8" />
           </div>
 
           <h1 className="mt-6 text-sm font-bold uppercase tracking-[0.35em] text-ink-700">

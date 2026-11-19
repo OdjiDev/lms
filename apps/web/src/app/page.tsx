@@ -1,27 +1,34 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import {
+  BookIcon,
+  BuildingIcon,
+  ChartIcon,
+  CheckIcon,
+  DevicesIcon,
+} from '@/components/icons';
 
 const FEATURES = [
   {
     title: 'Parcours structurés',
     text: 'Modules, leçons, vidéos, textes et fichiers : un programme clair, versionné et publiable en un clic.',
-    icon: '▤',
+    icon: BookIcon,
   },
   {
     title: 'Progression fiable',
     text: 'La progression est calculée côté serveur, jamais côté client. Reprise exacte à la leçon suivante.',
-    icon: '◔',
+    icon: ChartIcon,
   },
   {
     title: 'Multi-organisations',
     text: 'Chaque organisation a son catalogue, ses apprenants et ses rôles. Vos données restent cloisonnées.',
-    icon: '◫',
+    icon: BuildingIcon,
   },
   {
     title: 'Prêt pour le mobile',
     text: 'La même API alimente le web et l’application Expo : un seul domaine métier, deux expériences.',
-    icon: '◱',
+    icon: DevicesIcon,
   },
 ];
 
@@ -33,7 +40,7 @@ export default async function LandingPage() {
     <div className="min-h-screen bg-ink-950 text-white">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <div className="flex items-center gap-2.5">
-          <span className="grid size-9 place-items-center rounded-xl bg-brand-500 text-lg text-ink-950">◐</span>
+          <span className="grid size-9 place-items-center rounded-xl bg-brand-500 text-base font-black text-ink-950">Y</span>
           <span className="text-sm font-bold">Yellow LMS</span>
         </div>
         <nav className="flex items-center gap-3">
@@ -104,7 +111,7 @@ export default async function LandingPage() {
                             index < 2 ? 'bg-emerald-400/20 text-emerald-300' : 'bg-white/10 text-white/40'
                           }`}
                         >
-                          {index < 2 ? '✓' : index + 1}
+                          {index < 2 ? <CheckIcon className="size-3.5" /> : index + 1}
                         </span>
                         <span className="text-xs text-white/70">{item}</span>
                       </div>
@@ -117,15 +124,18 @@ export default async function LandingPage() {
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2">
-          {FEATURES.map((feature) => (
-            <div key={feature.title} className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-              <span className="grid size-10 place-items-center rounded-xl bg-brand-500/15 text-lg text-brand-400">
-                {feature.icon}
-              </span>
-              <h2 className="mt-4 text-base font-bold">{feature.title}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-white/55">{feature.text}</p>
-            </div>
-          ))}
+          {FEATURES.map((feature) => {
+            const Icon = feature.icon;
+            return (
+              <div key={feature.title} className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+                <span className="grid size-10 place-items-center rounded-xl bg-brand-500/15 text-brand-400">
+                  <Icon className="size-5" />
+                </span>
+                <h2 className="mt-4 text-base font-bold">{feature.title}</h2>
+                <p className="mt-2 text-sm leading-relaxed text-white/55">{feature.text}</p>
+              </div>
+            );
+          })}
         </section>
       </main>
 
