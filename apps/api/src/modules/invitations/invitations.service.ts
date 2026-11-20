@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   GoneException,
@@ -13,9 +14,16 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { TokenService, type TokenPair } from '../auth/token.service';
 import { MailService } from '../mail/mail.service';
 import type { TenantContext } from '../../common/types/request';
-import type { AcceptInvitationDto, CreateInvitationDto } from './dto/invitation.dto';
+import { parseCsvRole, parseInvitationCsv } from './csv';
+import type {
+  AcceptInvitationDto,
+  CreateInvitationDto,
+  ImportInvitationsDto,
+} from './dto/invitation.dto';
 
 const INVITATION_TTL_DAYS = 7;
+const MAX_IMPORT_ROWS = 200;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ARGON_OPTIONS = { memoryCost: 19456, timeCost: 2, parallelism: 1 };
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -41,6 +49,8 @@ interface InvitationOwner {
   id: string;
   organizationId: string;
   email: string;
+  firstName: string | null;
+  lastName: string | null;
   role: Role;
   courseId: string | null;
   tokenHash: string;
@@ -68,6 +78,8 @@ export class InvitationsService {
       .map((invitation) => ({
         id: invitation.id,
         email: invitation.email,
+        firstName: invitation.firstName,
+        lastName: invitation.lastName,
         role: invitation.role,
         status: effectiveStatus(invitation.status, invitation.expiresAt),
         course: invitation.course,
@@ -85,9 +97,96 @@ export class InvitationsService {
   }
 
   async create(tenant: TenantContext, invitedById: string, dto: CreateInvitationDto) {
-    const email = dto.email.trim().toLowerCase();
-    const role = (dto.role ?? 'LEARNER') as Role;
+    return this.createInvitation(tenant, invitedById, {
+      email: dto.email,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      role: (dto.role ?? 'LEARNER') as Role,
+      courseId: dto.courseId,
+    });
+  }
 
+  /**
+   * Import CSV : chaque ligne devient une invitation individuelle.
+   * Les lignes invalides ou en conflit sont signalées sans bloquer le lot.
+   */
+  async importCsv(tenant: TenantContext, invitedById: string, dto: ImportInvitationsDto) {
+    const rows = parseInvitationCsv(dto.csv);
+
+    if (rows.length === 0) {
+      throw new BadRequestException('Aucune ligne exploitable dans le fichier CSV');
+    }
+    if (rows.length > MAX_IMPORT_ROWS) {
+      throw new BadRequestException(`Import limité à ${MAX_IMPORT_ROWS} lignes par fichier`);
+    }
+
+    const defaultRole = (dto.role ?? 'LEARNER') as Role;
+    const seen = new Set<string>();
+    const skipped: Array<{ line: number; email: string; reason: string }> = [];
+    let created = 0;
+
+    for (const row of rows) {
+      const email = row.email.trim().toLowerCase();
+
+      if (!EMAIL_PATTERN.test(email)) {
+        skipped.push({ line: row.line, email: row.email, reason: 'Adresse email invalide' });
+        continue;
+      }
+      if (seen.has(email)) {
+        skipped.push({ line: row.line, email, reason: 'Doublon dans le fichier' });
+        continue;
+      }
+      seen.add(email);
+
+      const role = (parseCsvRole(row.role) ?? defaultRole) as Role;
+
+      try {
+        await this.createInvitation(tenant, invitedById, {
+          email,
+          firstName: row.firstName,
+          lastName: row.lastName,
+          role,
+          courseId: dto.courseId,
+        });
+        created += 1;
+      } catch (error) {
+        if (
+          error instanceof ConflictException ||
+          error instanceof NotFoundException ||
+          error instanceof BadRequestException ||
+          error instanceof ForbiddenException
+        ) {
+          skipped.push({ line: row.line, email, reason: error.message });
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    return {
+      total: rows.length,
+      created,
+      skipped,
+    };
+  }
+
+  private async createInvitation(
+    tenant: TenantContext,
+    invitedById: string,
+    input: {
+      email: string;
+      firstName?: string;
+      lastName?: string;
+      role: Role;
+      courseId?: string | null;
+    },
+  ) {
+    const email = input.email.trim().toLowerCase();
+    const role = input.role;
+
+    if (!EMAIL_PATTERN.test(email)) {
+      throw new BadRequestException('Adresse email invalide');
+    }
     if (role === Role.OWNER) {
       throw new ForbiddenException('Le rôle propriétaire ne peut pas être délégué');
     }
@@ -119,9 +218,9 @@ export class InvitationsService {
       throw new ConflictException('Une invitation est déjà en attente pour cette adresse');
     }
 
-    if (dto.courseId) {
+    if (input.courseId) {
       const course = await this.prisma.course.findFirst({
-        where: { id: dto.courseId, organizationId: tenant.organizationId },
+        where: { id: input.courseId, organizationId: tenant.organizationId },
         select: { id: true },
       });
       if (!course) throw new NotFoundException('Cours introuvable');
@@ -135,8 +234,10 @@ export class InvitationsService {
         organizationId: tenant.organizationId,
         invitedById,
         email,
+        firstName: input.firstName?.trim() || null,
+        lastName: input.lastName?.trim() || null,
         role,
-        courseId: dto.courseId ?? null,
+        courseId: input.courseId ?? null,
         tokenHash: sha256(rawToken),
         expiresAt,
       },
@@ -241,6 +342,8 @@ export class InvitationsService {
 
     return {
       email: invitation.email,
+      firstName: invitation.firstName,
+      lastName: invitation.lastName,
       role: invitation.role,
       roleLabel: ROLE_LABELS[invitation.role],
       organizationName: invitation.organizationName,
@@ -288,7 +391,10 @@ export class InvitationsService {
         throw new UnauthorizedException('Mot de passe incorrect pour ce compte');
       }
     } else {
-      if (!dto.firstName?.trim() || !dto.lastName?.trim()) {
+      const firstName = dto.firstName?.trim() || invitation.firstName;
+      const lastName = dto.lastName?.trim() || invitation.lastName;
+
+      if (!firstName || !lastName) {
         throw new ConflictException('Prénom et nom sont requis pour créer le compte');
       }
       passwordHash = await hash(dto.password, ARGON_OPTIONS);
@@ -296,8 +402,8 @@ export class InvitationsService {
         data: {
           email: invitation.email,
           passwordHash,
-          firstName: dto.firstName.trim(),
-          lastName: dto.lastName.trim(),
+          firstName,
+          lastName,
         },
       });
     }
@@ -413,6 +519,8 @@ export class InvitationsService {
       id: invitation.id,
       organizationId: invitation.organizationId,
       email: invitation.email,
+      firstName: invitation.firstName,
+      lastName: invitation.lastName,
       role: invitation.role,
       courseId: invitation.courseId,
       tokenHash: invitation.tokenHash,
@@ -434,6 +542,8 @@ export class InvitationsService {
   private serialize(invitation: {
     id: string;
     email: string;
+    firstName: string | null;
+    lastName: string | null;
     role: Role;
     status: InvitationStatus;
     expiresAt: Date;
@@ -444,6 +554,8 @@ export class InvitationsService {
     return {
       id: invitation.id,
       email: invitation.email,
+      firstName: invitation.firstName,
+      lastName: invitation.lastName,
       role: invitation.role,
       status: effectiveStatus(invitation.status, invitation.expiresAt),
       course: invitation.course,

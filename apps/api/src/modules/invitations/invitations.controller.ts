@@ -15,7 +15,7 @@ import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { SkipTenant } from '../../common/decorators/skip-tenant.decorator';
 import type { AuthUser, TenantContext } from '../../common/types/request';
-import { AcceptInvitationDto, CreateInvitationDto } from './dto/invitation.dto';
+import { AcceptInvitationDto, CreateInvitationDto, ImportInvitationsDto } from './dto/invitation.dto';
 import { InvitationsService } from './invitations.service';
 
 function metaFrom(request: Request) {
@@ -42,6 +42,16 @@ export class InvitationsController {
     @Body() dto: CreateInvitationDto,
   ) {
     return this.invitations.create(tenant, user.id, dto);
+  }
+
+  @Roles('OWNER', 'ADMIN')
+  @Post('import')
+  importCsv(
+    @Tenant() tenant: TenantContext,
+    @CurrentUser() user: AuthUser,
+    @Body() dto: ImportInvitationsDto,
+  ) {
+    return this.invitations.importCsv(tenant, user.id, dto);
   }
 
   @Roles('OWNER', 'ADMIN')

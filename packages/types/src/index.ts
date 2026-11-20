@@ -232,6 +232,8 @@ export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'REVOKED' | 'EXPIRED';
 export interface Invitation {
   id: string;
   email: string;
+  firstName: string | null;
+  lastName: string | null;
   role: Role;
   status: InvitationStatus;
   course: { id: string; title: string; slug: string } | null;
@@ -251,6 +253,8 @@ export interface CreatedInvitation {
 /** Aperçu public d'une invitation, renvoyé avant acceptation. */
 export interface InvitationPreview {
   email: string;
+  firstName: string | null;
+  lastName: string | null;
   role: Role;
   roleLabel: string;
   organizationName: string;
@@ -259,4 +263,10 @@ export interface InvitationPreview {
   status: InvitationStatus;
   expiresAt: string;
   needsAccount: boolean;
+}
+
+export interface ImportInvitationsResult {
+  total: number;
+  created: number;
+  skipped: Array<{ line: number; email: string; reason: string }>;
 }

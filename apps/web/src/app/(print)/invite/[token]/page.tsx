@@ -73,6 +73,8 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
             token={token}
             email={preview.email}
             needsAccount={preview.needsAccount}
+            firstName={preview.firstName}
+            lastName={preview.lastName}
           />
         </div>
       )}

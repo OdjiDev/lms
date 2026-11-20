@@ -11,6 +11,7 @@ import type {
   Role,
 } from '@/lib/types';
 import { PageHeader } from '@/components/ui';
+import { ImportForm } from './import-form';
 import { InviteForm } from './invite-form';
 
 interface Member {
@@ -68,7 +69,12 @@ export default async function TeamPage() {
         subtitle="Gérez les accès à votre organisation et suivez les invitations en cours."
       />
 
-      {canInvite ? <InviteForm courses={courseList} /> : null}
+      {canInvite ? (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <InviteForm courses={courseList} />
+          <ImportForm courses={courseList} />
+        </div>
+      ) : null}
 
       <section>
         <div className="mb-4 flex items-end justify-between">
@@ -91,16 +97,23 @@ export default async function TeamPage() {
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-sm font-semibold">{invitation.email}</p>
+                      <p className="truncate text-sm font-semibold">
+                        {invitation.firstName || invitation.lastName
+                          ? `${invitation.firstName ?? ''} ${invitation.lastName ?? ''}`.trim()
+                          : invitation.email}
+                      </p>
                       <span className={`badge ${status.className}`}>{status.label}</span>
                     </div>
-                    <p className="mt-1 text-xs text-ink-500">
-                      {ROLE_LABELS[invitation.role]}
-                      {invitation.course ? ` · ${invitation.course.title}` : ''} · envoyée le{' '}
-                      {formatDate(invitation.createdAt)}
-                      {invitation.status === 'PENDING'
-                        ? ` · expire le ${formatDate(invitation.expiresAt)}`
-                        : ''}
+                    <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-ink-500">
+                      {invitation.firstName || invitation.lastName ? (
+                        <span className="truncate">{invitation.email}</span>
+                      ) : null}
+                      <span>{ROLE_LABELS[invitation.role]}</span>
+                      {invitation.course ? <span>· {invitation.course.title}</span> : null}
+                      <span>· envoyée le {formatDate(invitation.createdAt)}</span>
+                      {invitation.status === 'PENDING' ? (
+                        <span>· expire le {formatDate(invitation.expiresAt)}</span>
+                      ) : null}
                     </p>
                   </div>
 

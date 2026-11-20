@@ -7,10 +7,14 @@ export function InviteForm({
   token,
   email,
   needsAccount,
+  firstName,
+  lastName,
 }: {
   token: string;
   email: string;
   needsAccount: boolean;
+  firstName?: string | null;
+  lastName?: string | null;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -69,13 +73,29 @@ export function InviteForm({
             <label htmlFor="firstName" className="label">
               Prénom
             </label>
-            <input id="firstName" name="firstName" required minLength={2} maxLength={60} className="input" />
+            <input
+              id="firstName"
+              name="firstName"
+              required
+              minLength={2}
+              maxLength={60}
+              defaultValue={firstName ?? ''}
+              className="input"
+            />
           </div>
           <div>
             <label htmlFor="lastName" className="label">
               Nom
             </label>
-            <input id="lastName" name="lastName" required minLength={2} maxLength={60} className="input" />
+            <input
+              id="lastName"
+              name="lastName"
+              required
+              minLength={2}
+              maxLength={60}
+              defaultValue={lastName ?? ''}
+              className="input"
+            />
           </div>
         </div>
       ) : (

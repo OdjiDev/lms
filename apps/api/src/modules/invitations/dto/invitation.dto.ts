@@ -19,10 +19,38 @@ export class CreateInvitationDto {
   email!: string;
 
   @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(60)
+  firstName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(60)
+  lastName?: string;
+
+  @IsOptional()
   @IsIn(INVITABLE_ROLES, { message: 'Rôle non autorisé' })
   role?: InvitableRole;
 
   /** Inscription automatique à ce cours dès l'acceptation. */
+  @IsOptional()
+  @IsUUID('4', { message: 'Cours invalide' })
+  courseId?: string;
+}
+
+export class ImportInvitationsDto {
+  /** Contenu brut du fichier CSV (séparateur virgule ou point-virgule). */
+  @IsString()
+  @MinLength(3, { message: 'Fichier CSV vide' })
+  @MaxLength(400_000, { message: 'Fichier CSV trop volumineux' })
+  csv!: string;
+
+  @IsOptional()
+  @IsIn(INVITABLE_ROLES, { message: 'Rôle non autorisé' })
+  role?: InvitableRole;
+
   @IsOptional()
   @IsUUID('4', { message: 'Cours invalide' })
   courseId?: string;

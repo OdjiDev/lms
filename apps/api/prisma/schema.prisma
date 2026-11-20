@@ -315,6 +315,9 @@ model Invitation {
   id             String           @id @default(uuid()) @db.Uuid
   organizationId String           @db.Uuid
   email          String           @db.Citext
+  /// Nom pré-rempli à l'acceptation (import CSV).
+  firstName      String?
+  lastName       String?
   role           Role             @default(LEARNER)
   /// Cours auquel l'apprenant est inscrit automatiquement à l'acceptation.
   courseId       String?          @db.Uuid

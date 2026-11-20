@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { ApiError, api } from '@/lib/api';
-import type { CreatedInvitation, QuizSubmissionResult } from '@/lib/types';
+import type { CreatedInvitation, ImportInvitationsResult, QuizSubmissionResult } from '@/lib/types';
 
 export interface FormState {
   error?: string;
@@ -461,4 +461,41 @@ export async function revokeInvitationAction(formData: FormData): Promise<void> 
   if (!id) return;
   await api(`/invitations/${id}`, { method: 'DELETE' });
   revalidatePath('/team');
+}
+
+export interface ImportInvitationsState {
+  error?: string;
+  ok?: boolean;
+  result?: ImportInvitationsResult;
+}
+
+/** Import CSV : chaque ligne valide déclenche une invitation par email. */
+export async function importInvitationsAction(
+  _prev: ImportInvitationsState,
+  formData: FormData,
+): Promise<ImportInvitationsState> {
+  const file = formData.get('file');
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: 'Choisissez un fichier CSV.' };
+  }
+  if (file.size > 400_000) {
+    return { error: 'Fichier trop volumineux (400 Ko maximum).' };
+  }
+
+  const csv = await file.text();
+  const role = String(formData.get('role') ?? 'LEARNER');
+  const courseId = String(formData.get('courseId') ?? '').trim();
+
+  try {
+    const result = await api<ImportInvitationsResult>('/invitations/import', {
+      method: 'POST',
+      body: { csv, role, courseId: courseId || undefined },
+    });
+
+    revalidatePath('/team');
+    return { ok: true, result };
+  } catch (error) {
+    if (error instanceof ApiError) return { error: error.message };
+    throw error;
+  }
 }

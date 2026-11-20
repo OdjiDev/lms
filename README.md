@@ -125,6 +125,7 @@ quand on passera à un accès DB par transaction avec `SET LOCAL app.org_id`.
 | GET | `/certificates/verify/:serial` | **public** — vérification d'authenticité |
 | GET | `/invitations` | staff — invitations de l'organisation |
 | POST | `/invitations` | OWNER/ADMIN — envoi d'un lien personnel |
+| POST | `/invitations/import` | OWNER/ADMIN — import CSV (une invitation par ligne) |
 | POST | `/invitations/:id/resend`, `DELETE /invitations/:id` | OWNER/ADMIN — renvoi / annulation |
 | GET | `/invitations/:token` | **public** — aperçu avant acceptation |
 | POST | `/invitations/:token/accept` | **public** — création du compte + rattachement + session |
@@ -155,6 +156,15 @@ quand on passera à un accès DB par transaction avec `SET LOCAL app.org_id`.
 - Renvoi : le jeton précédent est invalidé. Annulation : l'invitation passe en `REVOKED`.
 - Statuts : `PENDING`, `ACCEPTED`, `REVOKED`, `EXPIRED` (calculé à l'expiration).
 
+### Import CSV
+
+- Depuis **Équipe & invitations**, le staff importe un fichier CSV : chaque ligne valide devient une invitation individuelle (email envoyé, prénom/nom pré-remplis à l'acceptation).
+- Colonnes reconnues (en-tête facultatif, accents et alias anglais acceptés) : `email`, `prenom`, `nom`, `role`. Séparateur virgule **ou** point-virgule, champs entre guillemets, BOM Excel géré.
+- Le rôle de la colonne `role` prime sur le rôle par défaut du formulaire (valeurs acceptées : `apprenant`, `formateur`, `administrateur` ou leurs équivalents anglais).
+- Un cours peut être choisi pour inscrire tout le lot ; il s'ajoute aux invitations créées.
+- Limite : **200 lignes par fichier**. Les lignes invalides (email mal formé, doublon, membre déjà présent, invitation déjà en attente) sont listées dans le compte rendu sans bloquer les autres.
+- Modèle téléchargeable : `/modele-invitations.csv` (bouton sur la page Équipe).
+
 ## Sécurité
 
 - Mots de passe : Argon2id (`@node-rs/argon2`, 19 MiB / 2 passes).
@@ -168,7 +178,7 @@ quand on passera à un accès DB par transaction avec `SET LOCAL app.org_id`.
 
 1. ~~**Quiz & évaluations**~~ ✅ (auto-correction côté NestJS ; scoring avancé FastAPI à venir).
 2. ~~**Certificats**~~ ✅ (émission automatique, rendu imprimable A4, vérification publique).
-3. ~~**Invitations**~~ ✅ (email Mailpit en dev, jeton à usage unique, rattachement + inscription). Import CSV à venir.
+3. ~~**Invitations**~~ ✅ (email Mailpit en dev, jeton à usage unique, rattachement + inscription, **import CSV**).
 4. **Médias** : stockage S3-compatible (Scaleway, R2, Garage) + URLs présignées, transcodage vidéo.
 5. **Analytics** : temps de visionnage, taux d'abandon par leçon, cohortes.
 6. **RLS Postgres** activé + tests d'isolation inter-tenant.
